@@ -267,7 +267,7 @@ def trailing_blank_lines(physical_line, lines, line_number, total_lines):
 
 @register_check
 def maximum_line_length(physical_line, max_line_length, multiline,
-                        line_number, noqa):
+                        line_number, noqa, indent_size):
     r"""Limit all lines to a maximum of 79 characters.
 
     There are still many devices around that are limited to 80 character
@@ -277,10 +277,14 @@ def maximum_line_length(physical_line, max_line_length, multiline,
     of 79 characters. For flowing long blocks of text (docstrings or
     comments), limiting the length to 72 characters is recommended.
 
+    Tabs are expanded using ``indent_size`` before the length is measured,
+    so the reported length matches the column width an editor shows.
+
     Reports error E501.
     """
     line = physical_line.rstrip()
-    length = len(line)
+    expanded = line.expandtabs(indent_size)
+    length = len(expanded)
     if length > max_line_length and not noqa:
         # Special case: ignore long shebang lines.
         if line_number == 1 and line.startswith('#!'):
@@ -288,10 +292,10 @@ def maximum_line_length(physical_line, max_line_length, multiline,
         # Special case for long URLs in multi-line docstrings or
         # comments, but still report the error when the 72 first chars
         # are whitespaces.
-        chunks = line.split()
+        chunks = expanded.split()
         if ((len(chunks) == 1 and multiline) or
             (len(chunks) == 2 and chunks[0] == '#')) and \
-                len(line) - len(chunks[-1]) < max_line_length - 7:
+                len(expanded) - len(chunks[-1]) < max_line_length - 7:
             return
         if length > max_line_length:
             return (max_line_length, "E501 line too long "

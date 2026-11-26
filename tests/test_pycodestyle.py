@@ -36,6 +36,23 @@ def test_mute_string(s, expected):
     assert mute_string(s) == expected
 
 
+def test_maximum_line_length_expands_tabs():
+    from pycodestyle import StyleGuide
+    from testing.support import InMemoryReport
+
+    guide = StyleGuide(
+        select=('E501',), max_line_length=5, indent_size=4,
+    )
+    reporter = guide.init_report(InMemoryReport)
+    guide.input_file(
+        filename='in-memory-test-file.py',
+        lines=['\t# a\n', '\t\t# a\n'],
+    )
+    # Each leading tab is indent_size columns wide, so both lines are
+    # longer than max_line_length even though len() is not.
+    assert reporter.in_memory_errors == ['E501:1:6', 'E501:2:6']
+
+
 def test_fstring_logical_line():
     src = '''\
 f'hello {{ {thing} }} world'
